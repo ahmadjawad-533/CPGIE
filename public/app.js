@@ -46,24 +46,20 @@ window.addEventListener('load', async () => {
 
 // ============ TAB SWITCHING ============
 function switchTab(tabName) {
-  // Hide all tabs
   document.querySelectorAll('.tab-content').forEach(tab => {
     tab.classList.remove('active');
   });
 
-  // Remove active class from all nav links
   document.querySelectorAll('.nav-link').forEach(link => {
     link.classList.remove('active');
   });
 
-  // Show selected tab
   const tabElement = document.getElementById(`${tabName}-tab`);
   if (tabElement) {
     tabElement.classList.add('active');
   }
 
-  // Add active class to clicked link
-  event.target.classList.add('active');
+  document.querySelector(`.nav-link[data-tab="${tabName}"]`)?.classList.add('active');
 }
 
 // ============ FILE UPLOAD ============

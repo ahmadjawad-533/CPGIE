@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Advanced Cloudinary Image Studio</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <!-- Navigation Bar -->
@@ -16,10 +16,10 @@
         <span>Advanced Image Studio</span>
       </div>
       <div class="nav-menu">
-        <a href="#" class="nav-link active" onclick="switchTab('gallery')">Gallery</a>
-        <a href="#" class="nav-link" onclick="switchTab('editor')">Editor</a>
-        <a href="#" class="nav-link" onclick="switchTab('templates')">Templates</a>
-        <a href="#" class="nav-link" onclick="switchTab('analytics')">Analytics</a>
+        <a href="#gallery" class="nav-link active" data-tab="gallery" onclick="switchTab('gallery')">Gallery</a>
+        <a href="#editor" class="nav-link" data-tab="editor" onclick="switchTab('editor')">Editor</a>
+        <a href="#templates" class="nav-link" data-tab="templates" onclick="switchTab('templates')">Templates</a>
+        <a href="#analytics" class="nav-link" data-tab="analytics" onclick="switchTab('analytics')">Analytics</a>
       </div>
       <div class="nav-stats">
         <span id="imageCount">0 Images</span>
@@ -297,6 +297,6 @@
     <div class="progress-fill"></div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

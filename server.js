@@ -25,7 +25,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static('public'));
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
 
 // Multer configuration for file uploads
 const storage = multer.memoryStorage();
@@ -278,12 +279,6 @@ app.post('/api/responsive-url', express.json(), async (req, res) => {
     console.error('Responsive URL error:', error);
     res.status(500).json({ error: error.message });
   }
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`🎨 Cloudinary Account: ${process.env.CLOUDINARY_CLOUD_NAME}`);
 });
 
 // ============ ADVANCED ROUTES ============
@@ -609,4 +604,22 @@ app.get('/api/analytics/:imageId', async (req, res) => {
     console.error('Analytics error:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Deployment health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Serve the frontend for the root URL and any non-API browser route.
+app.get('*', (req, res) => {
+  if (req.path === '/api' || req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
+
+  return res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
