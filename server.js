@@ -11,12 +11,21 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure Cloudinary
-cloudinary.config({
+const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
-});
+};
+
+const cloudinaryConfigured = Object.values(cloudinaryConfig).every(Boolean);
+
+if (cloudinaryConfigured) {
+  cloudinary.config(cloudinaryConfig);
+} else {
+  console.warn(
+    'Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.'
+  );
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,33 +37,58 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 
-// Multer configuration for file uploads
+// Keep uploads in memory, then stream them directly to Cloudinary.
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB max
+  limits: { fileSize: MAX_IMAGE_SIZE },
+  fileFilter: (_req, file, callback) => {
+    if (!file.mimetype.startsWith('image/')) {
+      const error = new Error('Only image files are supported.');
+      error.status = 400;
+      return callback(error);
+    }
+
+    return callback(null, true);
+  }
 });
+
+function uploadImage(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: 'image',
+        folder: 'photo-gallery'
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+}
 
 // ============ ROUTES ============
 
 // 1. Upload Image to Cloudinary
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file provided' });
+    if (!cloudinaryConfigured) {
+      return res.status(503).json({
+        error: 'Cloudinary is not configured on this deployment. Add the three CLOUDINARY_* environment variables and redeploy.'
+      });
     }
 
-    const b64 = Buffer.from(req.file.buffer).toString('base64');
-    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+    if (!req.file) {
+      return res.status(400).json({ error: 'Choose an image before uploading.' });
+    }
 
-    const result = await cloudinary.uploader.upload(dataURI, {
-      resource_type: 'auto',
-      folder: 'photo-gallery',
-      quality: 'auto',
-      fetch_format: 'auto'
-    });
+    const result = await uploadImage(req.file.buffer);
 
-    res.json({
+    return res.status(201).json({
       success: true,
       imageId: result.public_id,
       imageUrl: result.secure_url,
@@ -63,8 +97,10 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       size: result.bytes
     });
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Cloudinary upload failed:', error.message);
+    return res.status(502).json({
+      error: error.message || 'Cloudinary could not upload this image.'
+    });
   }
 });
 
@@ -608,7 +644,10 @@ app.get('/api/analytics/:imageId', async (req, res) => {
 
 // Deployment health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    cloudinary: cloudinaryConfigured ? 'configured' : 'missing_configuration'
+  });
 });
 
 // Serve the frontend for the root URL and any non-API browser route.
@@ -618,6 +657,16 @@ app.get('*', (req, res) => {
   }
 
   return res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.use((error, _req, res, _next) => {
+  if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'The image is too large. Maximum size is 20 MB.' });
+  }
+
+  return res.status(error.status || 500).json({
+    error: error.message || 'The server could not process the upload.'
+  });
 });
 
 app.listen(PORT, () => {

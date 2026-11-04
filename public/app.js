@@ -84,7 +84,13 @@ function handleDrop(e) {
 
 async function uploadFile(file) {
   if (!file.type.startsWith('image/')) {
-    showNotification('❌ Please select an image file', 'error');
+    showNotification('Please select an image file.', 'error');
+    return;
+  }
+
+  const maxUploadSize = 20 * 1024 * 1024;
+  if (file.size > maxUploadSize) {
+    showNotification('The image is too large. Maximum size is 20 MB.', 'error');
     return;
   }
 
@@ -102,26 +108,26 @@ async function uploadFile(file) {
 
     document.querySelector('.progress-fill').style.width = '70%';
 
-    if (!response.ok) throw new Error('Upload failed');
-
-    const data = await response.json();
-
-    if (data.success) {
-      document.querySelector('.progress-fill').style.width = '100%';
-      showNotification(`✅ Image uploaded successfully!`);
-      
-      setTimeout(() => {
-        progressBar.style.display = 'none';
-        document.querySelector('.progress-fill').style.width = '0%';
-        loadImages();
-        updateAnalytics();
-      }, 500);
-
-      fileInput.value = '';
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || `Upload failed with status ${response.status}.`);
     }
+
+    document.querySelector('.progress-fill').style.width = '100%';
+    showNotification('Image uploaded successfully!');
+
+    setTimeout(async () => {
+      progressBar.style.display = 'none';
+      document.querySelector('.progress-fill').style.width = '0%';
+      await loadImages();
+      updateAnalytics();
+    }, 500);
+
+    fileInput.value = '';
   } catch (error) {
-    showNotification(`❌ Upload failed: ${error.message}`, 'error');
+    showNotification(error.message || 'Upload failed. Please try again.', 'error');
     progressBar.style.display = 'none';
+    document.querySelector('.progress-fill').style.width = '0%';
   }
 }
 
