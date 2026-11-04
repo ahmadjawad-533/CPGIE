@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Cloudinary Image Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <i class="fas fa-image"></i>
+        <span>Advanced Image Studio</span>
+      </div>
+      <div class="nav-menu">
+        <a href="#" class="nav-link active" onclick="switchTab('gallery')">Gallery</a>
+        <a href="#" class="nav-link" onclick="switchTab('editor')">Editor</a>
+        <a href="#" class="nav-link" onclick="switchTab('templates')">Templates</a>
+        <a href="#" class="nav-link" onclick="switchTab('analytics')">Analytics</a>
+      </div>
+      <div class="nav-stats">
+        <span id="imageCount">0 Images</span>
+        <span id="totalSize">0 MB</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3><i class="fas fa-upload"></i> Upload</h3>
+        <div class="upload-zone" id="dropZone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Drop files here</p>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3><i class="fas fa-wand-magic-sparkles"></i> Quick Effects</h3>
+        <div class="quick-effects">
+          <button class="effect-btn" onclick="quickApply('grayscale')" title="Grayscale">
+            <i class="fas fa-circle-half-stroke"></i> B&W
+          </button>
+          <button class="effect-btn" onclick="quickApply('sepia')" title="Sepia">
+            <i class="fas fa-leaf"></i> Sepia
+          </button>
+          <button class="effect-btn" onclick="quickApply('blur')" title="Blur">
+            <i class="fas fa-water"></i> Blur
+          </button>
+          <button class="effect-btn" onclick="quickApply('sharpen')" title="Sharpen">
+            <i class="fas fa-bolt"></i> Sharp
+          </button>
+          <button class="effect-btn" onclick="quickApply('oil_paint')" title="Oil Paint">
+            <i class="fas fa-palette"></i> Oil
+          </button>
+          <button class="effect-btn" onclick="quickApply('cartoonify')" title="Cartoon">
+            <i class="fas fa-face-grinning"></i> Cartoon
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3><i class="fas fa-palette"></i> Tools</h3>
+        <div class="tools-menu">
+          <button onclick="openTool('smart-crop')" class="tool-btn">
+            <i class="fas fa-crop"></i> Smart Crop
+          </button>
+          <button onclick="openTool('watermark')" class="tool-btn">
+            <i class="fas fa-water"></i> Watermark
+          </button>
+          <button onclick="openTool('frame')" class="tool-btn">
+            <i class="fas fa-square"></i> Frame
+          </button>
+          <button onclick="openTool('blur-face')" class="tool-btn">
+            <i class="fas fa-eye-slash"></i> Blur Face
+          </button>
+          <button onclick="openTool('social')" class="tool-btn">
+            <i class="fas fa-share-alt"></i> Social Sizes
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Gallery Tab -->
+      <section id="gallery-tab" class="tab-content active">
+        <div class="section-header">
+          <h2><i class="fas fa-images"></i> Your Image Library</h2>
+          <div class="header-actions">
+            <input type="text" id="searchInput" placeholder="Search images..." class="search-box">
+            <select id="sortSelect" class="sort-select">
+              <option value="recent">Recent</option>
+              <option value="size">Largest</option>
+              <option value="name">Name</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="gallery" class="gallery-grid">
+          <div class="empty-state">
+            <i class="fas fa-image"></i>
+            <p>No images yet. Start by uploading!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Editor Tab -->
+      <section id="editor-tab" class="tab-content">
+        <div class="editor-wrapper">
+          <div class="editor-preview-area">
+            <div class="preview-container">
+              <img id="editorImage" src="" alt="Editor Preview">
+            </div>
+            <div class="preview-info">
+              <p id="previewInfo">No image selected</p>
+            </div>
+          </div>
+
+          <div class="editor-panel">
+            <h3>Image Controls</h3>
+            
+            <div class="control-section">
+              <label>Dimensions</label>
+              <div class="control-row">
+                <input type="number" id="widthInput" placeholder="Width" value="400" min="100" max="2000">
+                <input type="number" id="heightInput" placeholder="Height" value="400" min="100" max="2000">
+              </div>
+            </div>
+
+            <div class="control-section">
+              <label>Effects</label>
+              <select id="effectSelect" class="full-select">
+                <option value="">None</option>
+                <option value="grayscale">Grayscale</option>
+                <option value="sepia">Sepia</option>
+                <option value="blur">Blur</option>
+                <option value="sharpen">Sharpen</option>
+                <option value="oil_paint">Oil Paint</option>
+                <option value="cartoonify">Cartoonify</option>
+                <option value="pixelate">Pixelate</option>
+                <option value="vignette">Vignette</option>
+              </select>
+            </div>
+
+            <div class="control-section">
+              <label>Rotation: <span id="rotateValue">0°</span></label>
+              <input type="range" id="rotateInput" value="0" min="0" max="360" class="slider" 
+                     oninput="document.getElementById('rotateValue').textContent = this.value + '°'">
+            </div>
+
+            <div class="control-section">
+              <label>Quality</label>
+              <select id="qualitySelect" class="full-select">
+                <option value="80">80% (Small)</option>
+                <option value="90">90% (Medium)</option>
+                <option value="100">100% (High)</option>
+                <option value="auto" selected>Auto</option>
+              </select>
+            </div>
+
+            <div class="control-section">
+              <label>Watermark Text</label>
+              <input type="text" id="watermarkText" placeholder="Enter text..." class="full-select">
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-primary" onclick="applyTransform()">
+                <i class="fas fa-check"></i> Apply Transform
+              </button>
+              <button class="btn btn-secondary" onclick="applyWatermark()">
+                <i class="fas fa-water"></i> Add Watermark
+              </button>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-success" onclick="downloadImage()">
+                <i class="fas fa-download"></i> Download
+              </button>
+              <button class="btn btn-info" onclick="copyUrl()">
+                <i class="fas fa-copy"></i> Copy URL
+              </button>
+              <button class="btn btn-danger" onclick="deleteImage()">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Templates Tab -->
+      <section id="templates-tab" class="tab-content">
+        <div class="section-header">
+          <h2><i class="fas fa-layout"></i> Social Media Templates</h2>
+        </div>
+        
+        <div class="templates-grid">
+          <div class="template-card" onclick="generateSocialSizes()">
+            <i class="fab fa-instagram"></i>
+            <h4>Instagram</h4>
+            <p>1080x1080, Story, Feed</p>
+          </div>
+          <div class="template-card" onclick="generateSocialSizes()">
+            <i class="fab fa-twitter"></i>
+            <h4>Twitter</h4>
+            <p>1200x675, Header</p>
+          </div>
+          <div class="template-card" onclick="generateSocialSizes()">
+            <i class="fab fa-facebook"></i>
+            <h4>Facebook</h4>
+            <p>Cover, Post</p>
+          </div>
+          <div class="template-card" onclick="generateSocialSizes()">
+            <i class="fab fa-linkedin"></i>
+            <h4>LinkedIn</h4>
+            <p>1200x627</p>
+          </div>
+        </div>
+
+        <div id="socialResult" class="results-container" style="display: none;">
+          <h3>Generated Sizes</h3>
+          <div id="socialSizesDisplay"></div>
+        </div>
+      </section>
+
+      <!-- Analytics Tab -->
+      <section id="analytics-tab" class="tab-content">
+        <div class="section-header">
+          <h2><i class="fas fa-chart-bar"></i> Analytics & Stats</h2>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="stat-card">
+            <i class="fas fa-images"></i>
+            <div class="stat-info">
+              <h3 id="totalImages">0</h3>
+              <p>Total Images</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-database"></i>
+            <div class="stat-info">
+              <h3 id="totalStorage">0 MB</h3>
+              <p>Total Storage</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-image"></i>
+            <div class="stat-info">
+              <h3 id="avgSize">0 KB</h3>
+              <p>Average Size</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-expand"></i>
+            <div class="stat-info">
+              <h3 id="highestRes">0x0</h3>
+              <p>Highest Resolution</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="imageStats" class="stats-details">
+          <!-- Stats displayed here -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Advanced Editor Modal -->
+  <div id="advancedModal" class="modal" style="display: none;">
+    <div class="modal-content advanced-modal">
+      <button class="close-btn" onclick="closeAdvancedModal()">&times;</button>
+      <h2 id="modalTitle">Advanced Tool</h2>
+      
+      <div id="modalContent" class="modal-body">
+        <!-- Content loaded dynamically -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="applyAdvanced()">Apply</button>
+        <button class="btn btn-secondary" onclick="closeAdvancedModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification" style="display: none;"></div>
+
+  <!-- Progress Bar -->
+  <div id="progressBar" class="progress-bar-container" style="display: none;">
+    <div class="progress-fill"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
